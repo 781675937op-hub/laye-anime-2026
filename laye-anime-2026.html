@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laye Anime 2026 - Ma Collection</title>
+  <!-- Polices et Icônes -->
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="laye-anime-2026.css">
+  <!-- Bibliothèques Tierces -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+  <div id="toast-container"></div>
+
+  <div class="container">
+    <header>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>Laye Anime <span style="color: var(--accent);">2026</span></h1>
+        <div style="display: flex; gap: 10px; position: relative;">
+          <button id="theme-toggle" onclick="toggleTheme()" title="Changer le thème">
+            <i class="ti ti-moon"></i>
+          </button>
+          <div id="profile-trigger" onclick="toggleProfileMenu(event)">
+            <img id="user-profile-img" src="" alt="Profil" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+          </div>
+          <!-- Dropdown Profil -->
+          <div id="profile-dropdown" class="profile-dropdown">
+            <div style="text-align: center; margin-bottom: 1rem;">
+              <p id="profile-user-name" contenteditable="true" onblur="saveProfileInfo()" style="font-weight: 700; font-size: 1.1rem;"></p>
+              <p id="profile-user-email" contenteditable="true" onblur="saveProfileInfo()" style="font-size: 0.8rem; color: var(--muted);"></p>
+            </div>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 10px 0;">
+            <button class="share-btn" style="width: 100%; border: none; background: none; text-align: left; padding: 8px;" onclick="document.getElementById('profile-upload').click()">
+              <i class="ti ti-camera"></i> Changer la photo
+            </button>
+            <input type="file" id="profile-upload" hidden accept="image/*" onchange="updateProfilePicture(event)">
+            <button class="share-btn" style="width: 100%; border: none; background: none; text-align: left; padding: 8px; color: #ef4444;" onclick="removeProfilePicture()">
+              <i class="ti ti-trash"></i> Supprimer la photo
+            </button>
+            <button class="share-btn" style="width: 100%; border: none; background: none; text-align: left; padding: 8px;" onclick="logout()">
+              <i class="ti ti-logout"></i> Déconnexion
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <input type="text" id="search" placeholder="Rechercher un anime..." style="flex: 1;">
+        <select id="sort" onchange="applyFilters()">
+          <option value="az">A-Z</option>
+          <option value="za">Z-A</option>
+        </select>
+        <select id="year-filter" onchange="applyFilters()">
+          <option value="all">ANNÉE</option>
+        </select>
+        <button onclick="openAddModal()"><i class="ti ti-plus"></i> Ajouter</button>
+        <button onclick="openStats()"><i class="ti ti-chart-pie"></i> Stats</button>
+        <button onclick="openSettings()"><i class="ti ti-settings"></i></button>
+      </div>
+
+      <div class="tags-container">
+        <div class="tag active" onclick="setGenre('all', this)">Tous</div>
+        <div class="tag" onclick="setGenre('shonen', this)">Shōnen</div>
+        <div class="tag" onclick="setGenre('shojo', this)">Shōjo</div>
+        <div class="tag" onclick="setGenre('isekai', this)">Isekai</div>
+        <div class="tag" onclick="setGenre('mecha', this)">Mecha</div>
+        <div class="tag" onclick="setGenre('favs', this)">⭐ Favoris</div>
+      </div>
+    </header>
+
+    <section id="seasonal-section">
+      <h2 style="margin-bottom: 1rem;">Nouveautés 2024-2026</h2>
+      <div class="seasonal-gallery" id="seasonal-gallery"></div>
+    </section>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0 1rem;">
+      <h2 id="count">0 anime</h2>
+      <button onclick="randomAnime()" style="background: var(--card-bg); font-size: 0.9rem;">
+        <i class="ti ti-dice"></i> Aléatoire
+      </button>
+    </div>
+
+    <main class="gallery" id="gallery"></main>
+    
+    <div id="pagination"></div>
+  </div>
+
+  <!-- Modal Détails -->
+  <div id="modal" class="modal" onclick="if(event.target === this) closeModal()">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+      <div class="modal-img-side">
+        <img id="modal-img" src="" alt="">
+      </div>
+      <div class="modal-info">
+        <h2 id="modal-title"></h2>
+        <p id="modal-meta"></p>
+        <div id="modal-synopsis" class="collapsed"></div>
+        <button id="read-more-btn" onclick="toggleSynopsis()" style="background: none; border: none; color: var(--accent); padding: 0; cursor: pointer; display: none;">Lire la suite</button>
+        
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 1rem;">
+          <button onclick="openMAL()"><i class="ti ti-external-link"></i> MyAnimeList</button>
+          <button onclick="shareAnime()"><i class="ti ti-share"></i> Partager</button>
+          <button onclick="generateShareCard()"><i class="ti ti-device-floppy"></i> Carte</button>
+          <button onclick="deleteAnime()" style="color: #ef4444;"><i class="ti ti-trash"></i></button>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; margin-top: 1rem; display: flex; align-items: center; gap: 15px;">
+          <div id="qrcode"></div>
+          <div style="flex: 1">
+            <p id="qr-desc" style="font-size: 0.8rem; color: var(--muted); margin-bottom: 5px;"></p>
+            <button id="qr-toggle-btn" onclick="toggleQR()" style="font-size: 0.75rem; padding: 4px 8px;"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ajouter -->
+  <div id="add-modal" class="modal" onclick="if(event.target === this) closeAddModal()">
+    <div class="modal-content" style="max-width: 600px; padding: 2rem; flex-direction: column;">
+      <h2 style="margin-bottom: 1.5rem;">Ajouter un Anime</h2>
+      <form id="add-form" class="add-form" onsubmit="saveNewAnime(event)">
+        <div class="full" style="position: relative;">
+          <input type="text" id="add-title" placeholder="Titre de l'anime..." required style="width: 100%;">
+          <div id="mal-results"></div>
+        </div>
+        <input type="number" id="add-year" placeholder="Année" required>
+        <input type="text" id="add-ep" placeholder="Nb épisodes (ex: 24)" required>
+        <select id="add-genre">
+          <option value="shonen">Shōnen</option>
+          <option value="shojo">Shōjo</option>
+          <option value="isekai">Isekai</option>
+          <option value="mecha">Mecha</option>
+          <option value="fantasy">Fantasy</option>
+        </select>
+        <input type="text" id="add-emoji" placeholder="Emoji (ex: 🔥)">
+        <input type="color" id="add-color" value="#c084fc" style="height: 45px; cursor: pointer;">
+        <div class="full">
+          <textarea id="add-synopsis" placeholder="Synopsis..." rows="3" style="width: 100%; padding: 10px; border-radius: 8px;"></textarea>
+        </div>
+        <div class="full" style="display: flex; align-items: center; gap: 15px;">
+          <button type="button" onclick="document.getElementById('add-img-file').click()"><i class="ti ti-photo"></i> Image</button>
+          <input type="file" id="add-img-file" hidden accept="image/*" onchange="handleLocalImage(event)">
+          <img id="add-img-preview" src="" alt="Preview">
+        </div>
+        <div class="full" style="display: flex; gap: 10px; margin-top: 1rem;">
+          <button type="submit" style="flex: 2; background: var(--accent); color: white;">Enregistrer</button>
+          <button type="button" onclick="resetLibrary()" style="flex: 1; border-color: #ef4444; color: #ef4444;">Reset</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Statistiques -->
+  <div id="stats-modal" class="modal" onclick="if(event.target === this) closeStats()">
+    <div class="modal-content" style="max-width: 600px; padding: 2.5rem; flex-direction: column;">
+      <h2 style="margin-bottom: 2rem; text-align: center;">Répartition par Genre</h2>
+      <div class="stats-container">
+        <div class="chart-box">
+          <canvas id="genreChart"></canvas>
+        </div>
+        <ul id="stats-legend" class="stats-legend"></ul>
+      </div>
+      <div style="margin-top: 2rem; display: flex; gap: 10px;">
+        <button onclick="exportFavorites()" style="flex: 1;"><i class="ti ti-download"></i> Exporter</button>
+        <button onclick="triggerImport()" style="flex: 1;"><i class="ti ti-upload"></i> Importer</button>
+        <input type="file" id="import-file" hidden accept=".json" onchange="importFavorites(event)">
+      </div>
+      <button onclick="shareFavorites()" style="margin-top: 10px; width: 100%;"><i class="ti ti-share"></i> Partager ma liste</button>
+    </div>
+  </div>
+
+  <!-- Modal Paramètres -->
+  <div id="settings-modal" class="modal" onclick="if(event.target === this) closeSettings()">
+    <div class="modal-content" style="max-width: 450px; padding: 2rem; flex-direction: column;">
+      <h2 style="margin-bottom: 1.5rem;">Paramètres</h2>
+      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Animations</span>
+          <button id="sw-anim" class="page-btn" onclick="toggleAppSetting('animations')"><i class="ti ti-check"></i></button>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Sons système</span>
+          <button id="sw-sound" class="page-btn" onclick="toggleAppSetting('sounds')"><i class="ti ti-check"></i></button>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Taille des cartes</span>
+          <select id="size-select" onchange="toggleAppSetting('cardSize', this.value)">
+            <option value="small">Petit</option>
+            <option value="medium">Moyen</option>
+            <option value="large">Grand</option>
+          </select>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Couleur d'accent</span>
+          <input type="color" id="accent-select" onchange="toggleAppSetting('accentColor', this.value)">
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Items par page</span>
+          <input type="number" id="items-per-page-select" min="4" max="48" style="width: 70px;" onchange="toggleAppSetting('itemsPerPage', parseInt(this.value))">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="laye-anime-2026.js"></script>
+</body>
+</html>
